@@ -7,11 +7,14 @@ This is the content of Ilayda's [website](https://pjournal.github.io/boun01-ilay
 There will be several assignments.
 
 ```markdown
-Syntax highlighted code block
 
 ## Assignment 1
 - code
+
 ## Assignment 2
 - code
+
 ## Assignment 3
 - code
+
+```
