@@ -6,8 +6,6 @@ This is the content of Ilayda's [website](https://pjournal.github.io/boun01-ilay
 
 There will be several assignments.
 
-```markdown
-
 ## Assignment 1
 - code
 
@@ -16,5 +14,3 @@ There will be several assignments.
 
 ## Assignment 3
 - code
-
-```
