@@ -1,16 +1,16 @@
 # Welcome to Ilayda Celenk's GitHub Pages
 
-This is the content of Ilayda's [website](https://pjournal.github.io/boun01-ilaydacelenk/) edited in Markdown files.
+This is my [Progress Journal website](https://pjournal.github.io/boun01-ilaydacelenk/) created for IE 48A course at Boğaziçi University. You can also visit my personal Github [Website](https://ilaydacelenk.github.io/).
 
 ## Assignments
 
-There will be several assignments.
+There will be several assignments done for this course.
 
 ### Assignment 1
-[RMarkdown Homework](https://pjournal.github.io/boun01-ilaydacelenk/RMarkdown_Homework.html)
+-[RMarkdown Homework](https://pjournal.github.io/boun01-ilaydacelenk/RMarkdown_Homework.html): Information about me and some posts
 
 ### Assignment 2
-- code
+- 
 
 ### Assignment 3
-- code
+- 
