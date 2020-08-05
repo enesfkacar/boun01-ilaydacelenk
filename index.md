@@ -7,7 +7,7 @@ This is my [Progress Journal website](https://pjournal.github.io/boun01-ilaydace
 There will be several assignments done for this course.
 
 ### Assignment 1
--[RMarkdown Homework](https://pjournal.github.io/boun01-ilaydacelenk/RMarkdown_Homework.html): Information about me and some posts
+- [RMarkdown Homework](https://pjournal.github.io/boun01-ilaydacelenk/RMarkdown_Homework.html): Information about me and some posts.
 
 ### Assignment 2
 - 
