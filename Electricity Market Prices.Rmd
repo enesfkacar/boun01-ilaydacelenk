@@ -1,0 +1,131 @@
+---
+title: "Electricity Market Prices Analysis of July 2020"
+author: "ilaydacelenk_IE48A"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+date: "8/12/2020"
+---
+
+## Introduction
+The following analysis for July, 2020 is made acccording to **MCP/SMP** data from  [*Energy Exchange Istanbul(EXIST) page*](https://rapor.epias.com.tr/rapor/xhtml/ptfSmfListeleme.xhtml). Data for the energy market is hourly. 
+
+### Some Basic Definitions
+- MCP: Market Clearing Price
+- SMP: System Marginal Price
+- Positive Imbalance Price: min(MCP,SMP)*0.97
+- Negative Imbalance Price: max(MCP,SMP)*1.03
+- If actual demand is higher than predicted demand, there is Energy Deficit and SMP is higher than MCP.
+- If actual demand is lower than predicted demand, there is Energy Surplus and SMP is lower than MCP.
+
+## Load Libraries and Read `Dataset`
+```{r setup, message=FALSE, warning=FALSE, echo=TRUE}
+
+library(readr)
+library(tidyverse)
+library(lubridate)
+library(tinytex)
+raw_df <- read.csv("/Users/ilaydacelenk/Desktop/Boun-MS/IE48A/R_codes/HW2/energy_data_en.csv", header = TRUE, check.names=TRUE)
+```
+
+### Overview of Data
+Columns of `raw_df` are renamed for simplicity, the date format is specified, SMP direction values are renamed and `Dataset` is created from raw_df according to these changes. Glimpse() function is called before and after in order to see the changes.
+
+```{r manipulation}
+raw_df %>% glimpse()
+
+Dataset <- raw_df %>% 
+  rename(
+    dt = Date,
+    MCP = MCP.,
+    SMP = SMP.,
+    pos_imb_price = Positive.Imbalance.Price..TL.MWh.,
+    neg_imb_price = Negative.Imbalance.Price..TL.MWh.,
+    SMP_dir = SMP.Direction
+    )
+
+Dataset$dt <- strptime(Dataset$dt,format="%d.%m.%y %H:%M")
+
+for(i in 1:length(Dataset$SMP_dir)){
+  if(Dataset$SMP_dir[i] == "?Energy Surplus"){
+    Dataset$SMP_dir[i] = "Energy_Surplus"
+  } else{
+    Dataset$SMP_dir[i] = "Energy_Deficit"
+  }
+}
+
+Dataset %>% glimpse()
+```
+
+
+### Head and Tail of the Dataset
+To understand the data, observe the entries.
+
+```{r head-tail}
+head(Dataset)
+
+tail(Dataset)
+```
+
+## Some Analysis
+
+### Summary of `Dataset`
+Here the minimum, maximum and average values can be seen. 
+According to the plot, above the blue line, SMP values are higher than MCP and this means for those data points there is energy deficit, ie. actual consumption is higher than the forecast.
+<br>There are `r Dataset %>% summarise(count=n())` data points in total. 
+<br>Number of points where there is energy surplus is `r Dataset %>% filter(SMP_dir == "Energy_Surplus") %>% summarise(count=n())`.
+<br>Number of points where there is energy deficit `r Dataset %>% filter(SMP_dir == "Energy_Deficit") %>% summarise(count=n())`.
+
+```{r summary, message=FALSE}
+Dataset %>% summary
+
+ggplot(Dataset, aes(x=MCP, y=SMP)) +
+            geom_point() + theme(aspect.ratio=1)+ xlim(0,400) + xlim(0,400) + ggtitle("MCP vs SMP Prices of July 2020") + labs(x = "MCP", y = "SMP") + geom_abline(slope=1, intercept=0, color="blue")
+
+```
+
+### Hourly MCP
+
+Since changes in the energy market happens hourly and in this report July 2020 data is analysed, there are 31 days with 24 data points for each day. The price changes regarding the hour of the day should be observed. In the graph, `MCP` vs. `hour_of_day` is shown to see the relationship between same hours of different days. 
+
+Observe that for most of the hours, MCP over different days are very close to each other. This means there could be a relationship between same hours of different days. 
+
+```{r hourly, message=FALSE}
+
+plot1 <- Dataset %>% group_by(hour_of_day = lubridate::hour(dt), day=lubridate::date(dt))
+
+ggplot(plot1, aes(x = hour_of_day, y = MCP, color=as.character(day))) + geom_point() + ggtitle("MCP vs Hour of Day for July 2020") + labs(x="Hour of Day", y="MCP")
+
+```
+
+After observing the relationship, it would be wise to calculate the hourly average values for each hour of the day. The plot below shows hourly average MCP and SMP values vs hour of day.
+
+```{r hourly-avg, message=FALSE}
+
+plot2 <- Dataset %>% group_by(hour_of_day = lubridate::hour(dt)) %>% summarise(avg_MCP = mean(MCP), avg_SMP = mean(SMP))
+
+ggplot(plot2) + geom_point(aes(x = hour_of_day, y = avg_MCP, color="MCP")) + geom_point(aes(x = hour_of_day, y = avg_SMP, color="SMP")) + ggtitle("Hourly Average MCP and SMP vs Hour of Day for July 2020") + labs(x="Hour of Day", y="Average MCP and SMP")
+
+```
+
+### Daily Average MCP and SMP
+```{r, message=FALSE}
+plot2 <- Dataset %>% group_by(day = lubridate::day(dt)) %>% summarise(daily_avg_MCP= mean(MCP), daily_avg_SMP= mean(SMP))
+
+print(plot2)
+
+ggplot(plot2) + geom_point(aes(x = day, y = daily_avg_MCP, color=as.character(day)))
+```
+
+## References
+- `Dataset`: **MCP/SMP** `data` from  [*EXIST page*](https://rapor.epias.com.tr/rapor/xhtml/ptfSmfListeleme.xhtml)
+
+
+
+<br>To see all my work related to IE 48A course, visit my [Progress Journal website](https://pjournal.github.io/boun01-ilaydacelenk/). You can also visit my personal Github [Website](https://ilaydacelenk.github.io/).
+
+
+
+
+
