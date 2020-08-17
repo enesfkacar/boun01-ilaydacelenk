@@ -11,13 +11,16 @@ date: "8/12/2020"
 ## Introduction
 The following analysis for July, 2020 is made acccording to **MCP/SMP** data from  [*Energy Exchange Istanbul(EXIST) page*](https://rapor.epias.com.tr/rapor/xhtml/ptfSmfListeleme.xhtml). Data for the energy market is hourly. 
 
-### Some Basic Definitions
+### Some Basic Definitions and Principles of the Energy System
 - MCP: Market Clearing Price
 - SMP: System Marginal Price
 - Positive Imbalance Price: min(MCP,SMP)*0.97
 - Negative Imbalance Price: max(MCP,SMP)*1.03
 - If actual demand is higher than predicted demand, there is Energy Deficit and SMP is higher than MCP.
 - If actual demand is lower than predicted demand, there is Energy Surplus and SMP is lower than MCP.
+
+Every day, consumers declares next day's hourly forecast on energy demand. Producers try to predict how much energy would be needed hourly as well. They do this in order to produce according to the demand. Just like all markets, when the demand is higher than supply, the price goes up and when the demand is lower than supply, the price goes down. Simple logic would suggest there is lower price at night, weekends and holidays. Therefore, it would be wise to consider it in this report. Since perfect forecast cannot be achieved numerically, imbalance prices are needed in order to solve the energy deficit and surplus problems. Forecasts can be improved using this report in machine learning processes. 
+
 
 ## Load Libraries and Read `Dataset`
 ```{r setup, message=FALSE, warning=FALSE, echo=TRUE}
@@ -42,16 +45,18 @@ Dataset <- raw_df %>%
     SMP = SMP.,
     pos_imb_price = Positive.Imbalance.Price..TL.MWh.,
     neg_imb_price = Negative.Imbalance.Price..TL.MWh.,
-    SMP_dir = SMP.Direction
+    SMP_direction = SMP.Direction
     )
 
 Dataset$dt <- strptime(Dataset$dt,format="%d.%m.%y %H:%M")
 
-for(i in 1:length(Dataset$SMP_dir)){
-  if(Dataset$SMP_dir[i] == "?Energy Surplus"){
-    Dataset$SMP_dir[i] = "Energy_Surplus"
-  } else{
-    Dataset$SMP_dir[i] = "Energy_Deficit"
+for(i in 1:length(Dataset$SMP_direction)){
+  if(Dataset$SMP_direction[i] == "?Energy Surplus"){
+    Dataset$SMP_direction[i] = "Energy_Surplus"
+  } else if(Dataset$SMP_direction[i] == "? Energy Deficit") {
+    Dataset$SMP_direction[i] = "Energy_Deficit"
+  } else {
+    Dataset$SMP_direction[i] = "In_Balance"
   }
 }
 
@@ -74,8 +79,6 @@ tail(Dataset)
 Here the minimum, maximum and average values can be seen. 
 According to the plot, above the blue line, SMP values are higher than MCP and this means for those data points there is energy deficit, ie. actual consumption is higher than the forecast.
 <br>There are `r Dataset %>% summarise(count=n())` data points in total. 
-<br>Number of points where there is energy surplus is `r Dataset %>% filter(SMP_dir == "Energy_Surplus") %>% summarise(count=n())`.
-<br>Number of points where there is energy deficit `r Dataset %>% filter(SMP_dir == "Energy_Deficit") %>% summarise(count=n())`.
 
 ```{r summary, message=FALSE}
 Dataset %>% summary
@@ -85,9 +88,26 @@ ggplot(Dataset, aes(x=MCP, y=SMP)) +
 
 ```
 
-### Hourly MCP
+<br>Number of points where there is energy surplus is `r Dataset %>% filter(SMP_direction == "Energy_Surplus") %>% summarise(count=n())`. For these points SMP is lower than MCP, which indicates that the forecasts are higher than the actual required energy.
+<br>Number of points where there is energy deficit `r Dataset %>% filter(SMP_direction == "Energy_Deficit") %>% summarise(count=n())`. For these points SMP is higher than MCP, which indicates that the usage is underestimated by the market.
+<br>Number of points where there is energy balance `r Dataset %>% filter(SMP_direction == "In_Balance") %>% summarise(count=n())`. These are the perfect forecasts.  
+
+```{r pie, message=FALSE}
+Dataset %>% summary
+
+plot_pie <- Dataset %>% group_by(SMP_direction) %>% summarise(count = n()) %>% mutate(proportion=count/sum(count)) %>% ungroup() %>% arrange(desc(count)) %>% mutate(SMP_direction=factor(SMP_direction, levels = as.character(SMP_direction))) 
+plot_pie
+
+ggplot(plot_pie, aes(x="", y= proportion, fill=SMP_direction)) + geom_col() + geom_text(aes(label = scales::percent(round(proportion,2))), position = position_stack(vjust = 0.5))+ coord_polar(theta = "y") + theme_void() + ggtitle("Energy Direction") + theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+### Hourly Average MCP and SMP
 
 Since changes in the energy market happens hourly and in this report July 2020 data is analysed, there are 31 days with 24 data points for each day. The price changes regarding the hour of the day should be observed. In the graph, `MCP` vs. `hour_of_day` is shown to see the relationship between same hours of different days. 
+
+Due to lower demand, lower price is observed at night as expected.
 
 Observe that for most of the hours, MCP over different days are very close to each other. This means there could be a relationship between same hours of different days. 
 
@@ -95,7 +115,7 @@ Observe that for most of the hours, MCP over different days are very close to ea
 
 plot1 <- Dataset %>% group_by(hour_of_day = lubridate::hour(dt), day=lubridate::date(dt))
 
-ggplot(plot1, aes(x = hour_of_day, y = MCP, color=as.character(day))) + geom_point() + ggtitle("MCP vs Hour of Day for July 2020") + labs(x="Hour of Day", y="MCP")
+ggplot(plot1, aes(x = hour_of_day, y = MCP, color=as.character(day))) + geom_point() + ggtitle("MCP vs Hour of Day for July 2020") + labs(x="Hour of Day", y="MCP") + theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -105,7 +125,7 @@ After observing the relationship, it would be wise to calculate the hourly avera
 
 plot2 <- Dataset %>% group_by(hour_of_day = lubridate::hour(dt)) %>% summarise(avg_MCP = mean(MCP), avg_SMP = mean(SMP))
 
-ggplot(plot2) + geom_point(aes(x = hour_of_day, y = avg_MCP, color="MCP")) + geom_point(aes(x = hour_of_day, y = avg_SMP, color="SMP")) + ggtitle("Hourly Average MCP and SMP vs Hour of Day for July 2020") + labs(x="Hour of Day", y="Average MCP and SMP")
+ggplot(plot2) + geom_line(aes(x = hour_of_day, y = avg_MCP, color="MCP")) + geom_line(aes(x = hour_of_day, y = avg_SMP, color="SMP")) + ggtitle("Hourly Average MCP and SMP vs Hour of Day for July 2020") + labs(x="Hour of Day", y="Average MCP and SMP") + theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
@@ -115,8 +135,37 @@ plot2 <- Dataset %>% group_by(day = lubridate::day(dt)) %>% summarise(daily_avg_
 
 print(plot2)
 
-ggplot(plot2) + geom_point(aes(x = day, y = daily_avg_MCP, color=as.character(day)))
+ggplot(plot2) + geom_point(aes(x = day, y = daily_avg_MCP, color="MCP")) + geom_point(aes(x = day, y = daily_avg_SMP, color="SMP")) + ggtitle("Daily Average MCP and SMP vs Hour of Day for July 2020") + theme(plot.title = element_text(hjust = 0.5)) + xlab("Day") + ylab("Daily Average Prices")
 ```
+
+### Average MCP and SMP over Weekdays
+Lower price is expected at weekends. Looking at the plot, average MCPs are respectively lower at weekends. On the other hand, SMPs are not correlated with this.
+
+```{r weekdays, message=FALSE, warning=FALSE}
+plot3 <- Dataset %>% group_by(weekday = lubridate::wday(dt)) %>% summarise(wd_avg_MCP= mean(MCP), wd_std_MCP=sd(MCP), wd_avg_SMP= mean(SMP), wd_std_SMP=sd(SMP))
+
+plot3
+
+ggplot(plot3) + geom_line(aes(x=weekday, y=wd_avg_MCP, color="MCP")) + geom_line(aes(x=weekday, y=wd_avg_SMP, color="SMP")) + ggtitle("Average MCP and SMP vs Weekdays") + theme(plot.title = element_text(hjust = 0.5)) + xlab("Weekdays") + ylab("Average MCP and SMP")
+
+
+```
+
+### Positive Imbalance Price and Negative Imbalance Price vs Energy Direction
+
+When there is energy surplus, Positive Imbalance Price(PIP) means energy surplus, and Negative Imbalance Price(NIP) means energy deficit. 
+
+According to the graph below, Positive Imbalance Price is always higher than Negative Imbalance Price. Hourly Average PIP and NIP values behave very similar to Hourly Average MCP and SMP. This was also expected.
+
+```{r hourly-avg-imb, message=FALSE}
+
+plot4 <- Dataset %>% group_by(hour_of_day = lubridate::hour(dt)) %>% summarise(avg_pos = mean(pos_imb_price), avg_neg = mean(neg_imb_price))
+
+ggplot(plot4) + geom_line(aes(x = hour_of_day, y = avg_pos, color="MCP")) + geom_line(aes(x = hour_of_day, y = avg_neg, color="SMP")) + ggtitle("Hourly Average PIP and NIP vs Hour of Day for July 2020") + labs(x="Hour of Day", y="Average PIP and NIP") + theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
 
 ## References
 - `Dataset`: **MCP/SMP** `data` from  [*EXIST page*](https://rapor.epias.com.tr/rapor/xhtml/ptfSmfListeleme.xhtml)
