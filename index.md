@@ -10,4 +10,4 @@ There will be several assignments done for this course.
 - [RMarkdown Homework](https://pjournal.github.io/boun01-ilaydacelenk/RMarkdown_Homework.html): Information about me and some posts.
 
 ### Assignment 2
-- [Electricity Market Prices](https://pjournal.github.io/boun01-ilaydacelenk/electricity_market_prices.html): Report about July 2020’s electricity prices.
+- [Electricity Market Prices](https://pjournal.github.io/boun01-ilaydacelenk/Electricity_Market_Prices.html): Report about July 2020’s electricity prices.
