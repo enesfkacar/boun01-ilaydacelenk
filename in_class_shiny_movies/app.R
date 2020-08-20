@@ -47,7 +47,9 @@ ui <- fluidPage(
                 inputId="genre",
                 label="Genre",
                 choices=c("All", genres),
-                selected="All"),
+                selected="All",
+                multiple = TRUE
+            ),
             sliderInput("minvotes",
                         "At Least X Votes",
                         min = min(shiny_movie_set$votes),
@@ -74,12 +76,12 @@ server <- function(input, output) {
     
         plot_df <- shiny_movie_set %>% filter(year >= input$years[1] & year <= input$years[2] & votes >= input$minvotes)
         
-        if(input$genre != "All"){
+        if(!("All" %in% input$genre)){
             plot_df <- plot_df %>% filter(genre == input$genre)
         }
         print(paste0("Number of rows: ", nrow(plot_df)))
         
-        ggplot(shiny_movie_set, aes(x=length, y=rating, color=genre)) + geom_point() + xlim(0,400) + ylim(0, 10) 
+        ggplot(plot_df, aes(x=length, y=rating, color=genre)) + geom_point() + xlim(0,400) + ylim(0, 10) 
         
     })
 }
