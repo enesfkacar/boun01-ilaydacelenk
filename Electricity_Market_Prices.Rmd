@@ -29,7 +29,7 @@ library(readr)
 library(tidyverse)
 library(lubridate)
 library(tinytex)
-raw_df <- read.csv("/Users/ilaydacelenk/Desktop/Boun-MS/IE48A/R_codes/HW2/energy_data_en.csv", header = TRUE, check.names=TRUE)
+raw_df <- read.csv("https://raw.githubusercontent.com/pjournal/boun01-ilaydacelenk/gh-pages/energy_data_en.csv", header = TRUE, check.names=TRUE)
 ```
 
 ### Overview of Data

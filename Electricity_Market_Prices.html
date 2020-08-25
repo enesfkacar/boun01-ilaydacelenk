@@ -410,7 +410,7 @@ summary {
 library(tidyverse)
 library(lubridate)
 library(tinytex)
-raw_df &lt;- read.csv(&quot;/Users/ilaydacelenk/Desktop/Boun-MS/IE48A/R_codes/HW2/energy_data_en.csv&quot;, header = TRUE, check.names=TRUE)</code></pre>
+raw_df &lt;- read.csv(&quot;https://raw.githubusercontent.com/pjournal/boun01-ilaydacelenk/gh-pages/energy_data_en.csv&quot;, header = TRUE, check.names=TRUE)</code></pre>
 <div id="overview-of-data" class="section level3">
 <h3>Overview of Data</h3>
 <p>Columns of <code>raw_df</code> are renamed for simplicity, the date format is specified, SMP direction values are renamed and <code>Dataset</code> is created from raw_df according to these changes. Glimpse() function is called before and after in order to see the changes.</p>
@@ -592,7 +592,7 @@ plot3</code></pre>
 <div id="positive-imbalance-price-and-negative-imbalance-price-vs-energy-direction" class="section level3">
 <h3>Positive Imbalance Price and Negative Imbalance Price vs Energy Direction</h3>
 <p>When there is energy surplus, Positive Imbalance Price(PIP) means energy surplus, and Negative Imbalance Price(NIP) means energy deficit.</p>
-<p>According to the graph below, Positive Imbalance Price is always higher than Negative Imbalance Price</p>
+<p>According to the graph below, Positive Imbalance Price is always higher than Negative Imbalance Price. Hourly Average PIP and NIP values behave very similar to Hourly Average MCP and SMP. This was also expected.</p>
 <pre class="r"><code>plot4 &lt;- Dataset %&gt;% group_by(hour_of_day = lubridate::hour(dt)) %&gt;% summarise(avg_pos = mean(pos_imb_price), avg_neg = mean(neg_imb_price))
 
 ggplot(plot4) + geom_line(aes(x = hour_of_day, y = avg_pos, color=&quot;MCP&quot;)) + geom_line(aes(x = hour_of_day, y = avg_neg, color=&quot;SMP&quot;)) + ggtitle(&quot;Hourly Average PIP and NIP vs Hour of Day for July 2020&quot;) + labs(x=&quot;Hour of Day&quot;, y=&quot;Average PIP and NIP&quot;) + theme(plot.title = element_text(hjust = 0.5))</code></pre>
