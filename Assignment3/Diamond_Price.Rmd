@@ -1,0 +1,83 @@
+---
+title: "Assignment 3: Diamonds Price Estimation"
+author: "ilaydacelenk_IE48A"
+date: "8/25/2020"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    code_folding: hide
+    
+---
+
+## Introduction
+This analysis focuses on the relationship between price and quality information of diamonds. The main objective is to create a model which predicts the price of a given diamond. 
+The `diamonds` dataset is included in the `ggplot2` package. Therefore it is necessary to load it. 
+
+## Loading Libraries
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#set.seed(503)
+library(dplyr)
+library(ggplot2)
+```
+
+## Overview and Manipulation of Data
+Let's take a quick view of the dataset. There are `r diamonds %>% summarise(count=n())` observations and `r length(diamonds)` variables.
+
+```{r dataset}
+str(diamonds)
+```
+
+### Variables
+
+* __carat__ : weight of the diamond between (`r min(diamonds$carat)` ,`r max(diamonds$carat)`)
+* __cut__ : quality of the cut in (`r levels(diamonds$cut)`) from worst to best
+* __color__ : diamond color in (`r levels(diamonds$color)`) from worst to best
+* __clarity__ : clarity of the diamond in (`r levels(diamonds$clarity)`) from worst to best
+* __depth__ : total depth percentage = z / mean(x, y) between (`r min(diamonds$depth)` ,`r max(diamonds$depth)`).
+* __table__ : width of top of diamond relative to widest point between (`r min(diamonds$table)` ,`r max(diamonds$table)`).
+* __price__ : price in US dollars between (`r min(diamonds$price)` ,`r max(diamonds$price)`)
+* __x__ : length in mm between (`r min(diamonds$x)` ,`r max(diamonds$x)`)
+* __y__ : width in mm between (`r min(diamonds$y)` ,`r max(diamonds$y)`)
+* __z__ : depth in mm between (`r min(diamonds$z)` ,`r max(diamonds$z)`).
+
+The variables `cut`, `color` and `clarity` are ordinal categorical variables, which means they are categorical but they can be ordered as factors. Therefore their levels are written from worst to best.
+<br> Figure below gives some information on `carat`, `cut`, `color` and `clarity`. 
+
+```{r }
+
+url <- "https://raw.githubusercontent.com/pjournal/boun01-ilaydacelenk/gh-pages/Assignment3/cut-color-clarity-carat.jpeg"
+z <- tempfile()
+download.file(url,z,mode="wb")
+img <- readJPEG(z)
+file.remove(z)
+img
+```
+
+
+```{r }
+
+diamonds_test <- diamonds %>% mutate(diamond_id = row_number()) %>% 
+    group_by(cut, color, clarity) %>% sample_frac(0.2) %>% ungroup()
+
+diamonds_train <- anti_join(diamonds %>% mutate(diamond_id = row_number()), 
+    diamonds_test, by = "diamond_id")
+
+
+diamonds_train
+diamonds_test
+```
+
+
+
+
+
+
+
+
+## References
+- [Assignment page](https://mef-bda503.github.io/archive/fall17/files/assignment_diamonds_data.html)
+
+
+<br>To see all my work related to IE 48A course, visit my [Progress Journal website](https://pjournal.github.io/boun01-ilaydacelenk/). You can also visit my personal Github [Website](https://ilaydacelenk.github.io/).
