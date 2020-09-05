@@ -1,7 +1,7 @@
 ---
 title: "Assignment 3: Diamonds Price Estimation"
 author: "ilaydacelenk_IE48A"
-date: "8/25/2020"
+date: "8/29/2020"
 output: 
   html_document:
     toc: true
@@ -20,12 +20,21 @@ knitr::opts_chunk$set(echo = TRUE)
 #set.seed(503)
 library(dplyr)
 library(ggplot2)
+library(ggcorrplot) #for correlation heatmap
+library(tidyr)
 ```
 
 ## Overview and Manipulation of Data
-Let's take a quick view of the dataset. There are `r diamonds %>% summarise(count=n())` observations and `r length(diamonds)` variables.
+
+### Summary
+
+Let's take a quick view of the variables of the `diamonds` dataset. There are `r diamonds %>% summarise(count=n())` observations and `r length(diamonds)` variables. I also stored the original data in `raw_diamonds`.
 
 ```{r dataset}
+# In case I need the original data
+raw_diamonds <- diamonds
+
+# Check the variables and types
 str(diamonds)
 ```
 
@@ -45,39 +54,182 @@ str(diamonds)
 The variables `cut`, `color` and `clarity` are ordinal categorical variables, which means they are categorical but they can be ordered as factors. Therefore their levels are written from worst to best.
 <br> Figure below gives some information on `carat`, `cut`, `color` and `clarity`. 
 
-```{r }
+```{r image}
+url <- "https://github.com/pjournal/boun01-ilaydacelenk/raw/gh-pages/Assignment3/cut-color-clarity-carat.png"
+```
+<center><img src="`r url`"></center>
 
-url <- "https://raw.githubusercontent.com/pjournal/boun01-ilaydacelenk/gh-pages/Assignment3/cut-color-clarity-carat.jpeg"
-z <- tempfile()
-download.file(url,z,mode="wb")
-img <- readJPEG(z)
-file.remove(z)
-img
+## Data Exploration
+Let's see some statistics about the dataset `diamonds`. For each numerical attribute we can compare median and mean. If they are very far away from each other, then they cannot be normally distributed. It is better to have them close. For the categorical attributes, we can see how many diamonds are in each category. We also would want them to close to each other, in order to have a realiable model. 
+
+```{r summary}
+# Median/mean for numerical, count for categorical attributes
+summary(diamonds)
+```
+
+### Price vs Numerical Attributes
+The following plot, shows linear relationships between price and numerical attributes. 
+```{r numerical-attr}
+# Linearity
+diamonds %>% gather(-price, -cut, -color, -clarity, key = "var", value = "value") %>% 
+  ggplot(aes(x = value, y = price)) + geom_point() + geom_smooth(method='lm', formula= y~x) + facet_wrap(~ var, scales = "free") +  theme_bw()
+```
+
+### Correlation
+This is the correlation matrix of numerical variables with significance levels according to the Pearson method. Since our objective is predicting the price, we focus on the relationship with price. For example, from the heatmap we can say that there is a significant relationship between price and carat, but price does not have a significant relationship with table and depth, therefore they are crossed on the map. Carat, x, y and z variables are highly correlated. This was expected since carat is the weight of the diamond and it has a positive relationship with volume which is described by x, y and z, which are length, width and depth. Above 0.8 means high correlation and below -0.8 means high anti-correlation.
+
+```{r correlation}
+# Select numerical attributes
+diamonds_numerical <- diamonds %>% select(-cut, -color, -clarity)
+
+# Plot correlation matrix for numerical attributes
+corr <- round(cor(diamonds_numerical), 1) #correlation matrix
+p_values_matrix <- cor_pmat(corr) #p-values to observe the significance of the variables
+ggcorrplot(corr, hc.order = TRUE, lab = TRUE, p.mat = p_values_matrix)
+```
+
+### Distribution of Prices
+
+The figure below shows that distribution of prices is right skewed. Since there are a lot of large values, we can take a look at logarithm of th price column. When we do that, we observe `log(price)` is more suitable since it is closer to being normal. Therefore, replacing `price` column with `log(price)` makes sense for the regression model. 
+
+```{r price-dist}
+# Right skewed
+ggplot(diamonds, aes(x=price)) + geom_histogram(binwidth=500)
+
+# More normal
+ggplot(diamonds, aes(x=log(price))) + geom_histogram()
+
+# Use log(price) instead of price
+diamonds$log.price = log(diamonds$price)
+diamonds <- diamonds %>% select(-price)
+```
+
+### Cut Proportions
+
+```{r cut-prop, message=FALSE}
+# Count the duplicates
+table(diamonds$cut)
+
+# Get proportions
+plot_cut <- diamonds %>% group_by(cut) %>% summarise(Count = n()) %>% mutate(Proportion=round(Count/sum(Count),1))
 ```
 
 
-```{r }
-
-diamonds_test <- diamonds %>% mutate(diamond_id = row_number()) %>% 
-    group_by(cut, color, clarity) %>% sample_frac(0.2) %>% ungroup()
-
-diamonds_train <- anti_join(diamonds %>% mutate(diamond_id = row_number()), 
-    diamonds_test, by = "diamond_id")
+Out of `r dim(diamonds)[1]` different diamonds in `diamonds` dataset, `r plot_cut$Count[plot_cut$cut=="Ideal"] ` are classifies as Ideal, which corresponds to `r plot_cut$Count[plot_cut$cut=="Ideal"] / dim(diamonds)[1] `.
 
 
-diamonds_train
-diamonds_test
+```{r cut-pie-prop, message=FALSE}
+# Show proportions on a pie plot
+ggplot(plot_cut, aes(x = "", y = Proportion, fill = cut)) + geom_bar(stat="identity", width=1) + coord_polar("y", start=0) + geom_text(aes(label = paste0(round(Proportion*100), "%")), position = position_stack(vjust = 0.5)) + labs(x = NULL, y = NULL, fill = NULL, title = "Proportion of Cut Types") + theme_classic() + theme(axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          plot.title = element_text(hjust = 0.5))
+```
+
+### Distribution of Price for Different Cuts
+Even though proportions of cut types are not close to each other, using log(price) instead of price is more preferable since price has normal distribution in each category. 
+
+```{r price-cut, message=FALSE}
+# Using price
+ggplot(raw_diamonds) + geom_histogram(aes(x = price)) + facet_wrap(~cut)
+
+# Using log(price)
+ggplot(diamonds) + geom_histogram(aes(x = log.price)) + facet_wrap(~cut)
 ```
 
 
+## Supervised Learning
+
+### Train Test Split
+
+```{r split}
+# Split
+train_indices <- sample(seq_len(nrow(diamonds)), size = 0.8*nrow(diamonds), replace = FALSE)
+train <- diamonds[train_indices, ]
+test <- diamonds[-train_indices, ]
+```
+
+### Model: Multiple Linear Regression
+According to p-values for t-tests and F-test, all of the attributes except have significant effect on `log(price)`.
+
+```{r lm}
+linear_model1<-lm(log.price ~ ., data=train)
+summary(linear_model1)
+
+# Remove the one with highest p-value 
+linear_model2<-lm(log.price ~ . -color^6, data=train)
+summary(linear_model2)
+
+# Now all attributes are significant
+linear_model3<-lm(log.price ~ . -color^6 -clarity^6, data=train)
+summary(linear_model3)
+```
 
 
+### Prediction
+Let's get the predicted `log(price)` values for the `test` set in order to compute residuals.
 
+```{r predict-lm}
+predict_test = predict(object=linear_model1, newdata=test)
+```
 
+## Mean Squared Error
+We can compare different models by their mean squared error(MSE). The model's MSE is `r mean((predict_test-test$log.price)^2)`.
+```{r mse}
+mse1 <- mean((predict_test-test$log.price)^2)
+mse1
+```
+
+## Possible Problems Related to Assumptions of Regression Analysis 
+
+In order to carry out a regression analysis, we need to check the assumptions. Otherwise, the hypothesis tests are not going to be valid. 
+
+- Normality of Error Terms
+- Linearity
+- Independence of Error Terms
+- Constant Variance of Error Terms (Homoscedasticity)
+
+Normality can be observed by histogram of the error distribution, for the other three we can carry out a residual analysis. 
+
+### Normality of Error Terms
+As we have seen above, the distribution of prices are right skewed. Let's check how its logarithm behaves. The figure below is the best we can get in terms of normality.
+```{r normality, message=FALSE}
+ggplot(test, aes(x=log.price)) + geom_histogram()
+```
+
+### Linearity
+The following graph shows residuals' behavior according to changing `log(price)` values.
+By ignoring a couple of outliers, linearity is not violated since we can draw parallel lines where the points between would be evenly distributed.
+
+```{r residuals-logprice}
+test$residuals = test$log.price - predict_test
+test$residuals = round(test$residuals, digits=2)
+ggplot(test) + 
+  geom_point(aes(x = log.price, y = residuals)) +
+  geom_hline(yintercept=0,col="red") 
+
+```
+
+### Independence of Error Terms
+
+Same graph shows that error terms are not switching signs by different log(price) values and the error terms are independent.
+
+### Constant Variance of Error Terms (Homoscedasticity)
+According to Residuals vs log(price) graph, error variance is not changing due to logarithm of prices. Therefore, this assumption is also not violated.
+
+## Results
+
+* Regression model for `diamonds` dataset works better for `log(price)` instead of `price`.
+* Assumptions for regression are shown to be valid by residual analysis. 
+* Predictors are highly significant.
 
 
 ## References
 - [Assignment page](https://mef-bda503.github.io/archive/fall17/files/assignment_diamonds_data.html)
+- [Inserting an image](https://stackoverflow.com/questions/28912868/how-to-insert-image-from-url-in-markdown)
+- [Train/Test Split](https://mef-bda503.github.io/archive/fall17/files/assignment_diamonds_data.html)
+
+
 
 
 <br>To see all my work related to IE 48A course, visit my [Progress Journal website](https://pjournal.github.io/boun01-ilaydacelenk/). You can also visit my personal Github [Website](https://ilaydacelenk.github.io/).
