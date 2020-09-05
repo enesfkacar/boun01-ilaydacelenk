@@ -9,7 +9,7 @@ date: "8/12/2020"
 ---
 
 ## Introduction
-The following analysis for July, 2020 is made acccording to **MCP/SMP** data from  [*Energy Exchange Istanbul(EXIST) page*](https://rapor.epias.com.tr/rapor/xhtml/ptfSmfListeleme.xhtml). Data for the energy market is hourly. 
+The following analysis for July, 2020 is made according to **MCP/SMP** data from  [*Energy Exchange Istanbul(EXIST) page*](https://rapor.epias.com.tr/rapor/xhtml/ptfSmfListeleme.xhtml). Data for the energy market is hourly. 
 
 ### Some Basic Definitions and Principles of the Energy System
 - MCP: Market Clearing Price
