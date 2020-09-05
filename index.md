@@ -11,3 +11,6 @@ There will be several assignments done for this course.
 
 ### Assignment 2
 - [Electricity Market Prices](https://pjournal.github.io/boun01-ilaydacelenk/Electricity_Market_Prices.html): Report about July 2020’s electricity prices using ggplot2 and dplyr packages.
+
+### Assignment 3
+- [Diamonds Price Estimation](https://pjournal.github.io/boun01-ilaydacelenk/Assignment3/Diamond_Price.html): Machine Learning project using tidyverse Diamonds data and a regression model.
