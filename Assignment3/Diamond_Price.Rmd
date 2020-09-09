@@ -75,6 +75,14 @@ diamonds %>% gather(-price, -cut, -color, -clarity, key = "var", value = "value"
   ggplot(aes(x = value, y = price)) + geom_point() + geom_smooth(method='lm', formula= y~x) + facet_wrap(~ var, scales = "free") +  theme_bw()
 ```
 
+### Log(Price) vs Numerical Attributes
+The following plot, shows linear relationships between log(price) and numerical attributes. 
+```{r numerical-attr2}
+# Linearity
+diamonds %>% gather(-price, -cut, -color, -clarity, key = "var", value = "value") %>% 
+  ggplot(aes(x = value, y = log(price))) + geom_point() + geom_smooth(method='lm', formula= y~x) + facet_wrap(~ var, scales = "free") +  theme_bw()
+```
+
 ### Correlation
 This is the correlation matrix of numerical variables with significance levels according to the Pearson method. Since our objective is predicting the price, we focus on the relationship with price. For example, from the heatmap we can say that there is a significant relationship between price and carat, but price does not have a significant relationship with table and depth, therefore they are crossed on the map. Carat, x, y and z variables are highly correlated. This was expected since carat is the weight of the diamond and it has a positive relationship with volume which is described by x, y and z, which are length, width and depth. Above 0.8 means high correlation and below -0.8 means high anti-correlation.
 
@@ -139,8 +147,12 @@ ggplot(diamonds) + geom_histogram(aes(x = log.price)) + facet_wrap(~cut)
 
 
 ## Supervised Learning
+Since we are trying to predict labeled column values, this is a supervised learning.
 
 ### Train Test Split
+Sometimes machine learning models may memorize instead of learning. This is called overfitting. In order to understand such situation, we split the data into `test` and `train` data sets. We fit the model using train, predict and evaluate accuracy using test data. If the `train` prediction accuracy is much higher from `test` prediction accuracy then overfitting may have occurred and we may want to change the parameters of the model or use a different model.
+
+For `train` data, we take a sample of 80% of the data without replacement and the rest 20% will be the `test` data.
 
 ```{r split}
 # Split
@@ -228,8 +240,6 @@ According to Residuals vs log(price) graph, error variance is not changing due t
 - [Assignment page](https://mef-bda503.github.io/archive/fall17/files/assignment_diamonds_data.html)
 - [Inserting an image](https://stackoverflow.com/questions/28912868/how-to-insert-image-from-url-in-markdown)
 - [Train/Test Split](https://mef-bda503.github.io/archive/fall17/files/assignment_diamonds_data.html)
-
-
 
 
 <br>To see all my work related to IE 48A course, visit my [Progress Journal website](https://pjournal.github.io/boun01-ilaydacelenk/). You can also visit my personal Github [Website](https://ilaydacelenk.github.io/).
