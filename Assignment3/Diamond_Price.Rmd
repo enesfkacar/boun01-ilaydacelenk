@@ -135,14 +135,11 @@ ggplot(plot_cut, aes(x = "", y = Proportion, fill = cut)) + geom_bar(stat="ident
 ```
 
 ### Distribution of Price for Different Cuts
-Even though proportions of cut types are not close to each other, using log(price) instead of price is more preferable since price has normal distribution in each category. 
+Even though proportions of cut types are not close to each other, using log(price) instead of price is more preferable since price has normal distribution in each category. Using box plot, we see the distribution of log(price) for different cut types. The plot below shows the importance of cut types. If we plotted price instead of log(price) then the distribution would be very skewed.
 
 ```{r price-cut, message=FALSE}
-# Using price
-ggplot(raw_diamonds) + geom_histogram(aes(x = price)) + facet_wrap(~cut)
-
-# Using log(price)
-ggplot(diamonds) + geom_histogram(aes(x = log.price)) + facet_wrap(~cut)
+diamonds %>% ggplot(aes(x = cut, y = log.price, fill=cut)) + geom_boxplot() + 
+  xlab("Cut Types") + ylab("log(price)") + ggtitle("Cut vs log(price)")
 ```
 
 
